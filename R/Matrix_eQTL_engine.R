@@ -1063,6 +1063,7 @@ Matrix_eQTL_main = function(
 						pvOutputThreshold.cis = 0,
 						snpspos = NULL, 
 						genepos = NULL,
+						loopspos = NULL,
 						cisDist = 1e6,
  						pvalue.hist = FALSE,
 						min.pv.by.genesnp = FALSE,

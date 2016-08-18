@@ -40,6 +40,7 @@ Matrix_eQTL_main( snps,
                   pvOutputThreshold.cis = 0,
                   snpspos = NULL, 
                   genepos = NULL,
+                  loopspos = NULL,
                   cisDist = 1e6,
                   pvalue.hist = FALSE,
                   min.pv.by.genesnp = FALSE,
@@ -122,6 +123,14 @@ Matrix_eQTL_engine(snps,
 			\ldots  \tab \ldots   \tab \ldots \tab \ldots \cr
 		}
 	}
+		\item{loopspos}{
+		\code{data.frame} with information about transcript locations, must have 8 columns - the name, chromosome, and positions of the left and right ends, like this:
+		\tabular{cccccccc}{
+		chr_1  \tab start_1 \tab stop_1 \tab chr_2 \tab start_2 \tab stop_2 \tab strand \tab nloops \cr
+		\ldots  \tab \ldots   \tab \ldots \tab \ldots	\tab	\ldots  \tab \ldots   \tab \ldots \tab \ldots \cr
+		}
+	}
+	
 	\item{cisDist}{
 		\code{numeric}. SNP-gene pairs within this distance are considered local. The distance is measured from the nearest end of the gene. SNPs within a gene are always considered local.
 	}

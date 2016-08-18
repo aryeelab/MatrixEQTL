@@ -1,0 +1,3 @@
+chr_1	start_1	stop_1	chr_2	start_2	stop_2	strand	nloops
+chr1	721280	752570	chr1	999999	1010001	.	1
+chr1	731280	731289	chr1	926420	926440	.	2
