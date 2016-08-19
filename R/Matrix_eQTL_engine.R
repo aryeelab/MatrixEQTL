@@ -1064,6 +1064,7 @@ Matrix_eQTL_main = function(
 						snpspos = NULL, 
 						genepos = NULL,
 						loopspos = NULL,
+						loopsfileout = NULL,
 						cisDist = 1e6,
  						pvalue.hist = FALSE,
 						min.pv.by.genesnp = FALSE,
@@ -1536,7 +1537,7 @@ Matrix_eQTL_main = function(
 			saver.tra$start(output_file_name,     statistic_name, snps, gene, testfun, pvfun);
 		if( pvOutputThreshold.cis > 0 )
 			saver.cis$start(output_file_name.cis, statistic_name, snps, gene, testfun, pvfun);
-		rm( statistic_name );
+		# rm( statistic_name ); # CAL kept the statistic name in memory
 	}
 	################################# Some useful functions #################################
 	{
@@ -1637,6 +1638,15 @@ Matrix_eQTL_main = function(
 		status("Performing eQTL analysis");
 		# ss = 1; gg = 1;
 		# ss = snps$nSlices(); gg = gene$nSlices();
+		
+		################### 
+		# Initialize file to write out to if looking at loops
+		if(!is.null(loopspos) & !is.null(loopsfileout)) {
+			snvec <- strsplit(statistic_name, "\t")[[1]]
+			rdf <- data.frame(matrix(c("SNP", "gene", snvec, "p-value", "loop_idx"), ncol = 4 + length(snvec)))
+			write.table(rdf, file = loopsfileout, append = TRUE, sep = "\t", row.names = FALSE, col.names = FALSE, quote = FALSE)
+		}
+		###################
 		
 		snps_offset = 0;
 		for(ss in 1:snps$nSlices()) {
@@ -1755,7 +1765,85 @@ Matrix_eQTL_main = function(
 	# 				counter$Update(gg, ss, select.tra, pv, n.tests = nrcs*nrcg, if(do.hist) afun(statistic) )
 					rp = paste(rp, ", ", formatC(n.eqtls.tra, big.mark=",", format = "f", digits = 0), if(pvOutputThreshold.cis > 0)" trans-"else" ","eQTLs", sep = "")
 				}
-	
+				
+###################				
+## CAL Additions ##
+###################
+				
+				## Find pairs of genes/SNPs where a gene overlaps with one anchor
+				## and the SNP overlaps with the other anchor of any of of many 
+				## loops. 
+				if(!is.null(loopspos) & !is.null(loopsfileout)) {
+					if( is.null( statistic ) ) {
+						if( is.null( cursnps ) ) {
+							cursnps = orthonormalize.snps( snps_process( snps$getSlice(ss) ), ss );
+						}
+						mat = vector("list", length(cursnps));
+						for(d in 1:length(cursnps)) {
+							mat[[d]] = tcrossprod(curgene, cursnps[[d]]);
+						}
+						statistic = statistic.fun( mat );
+						astatistic = afun(statistic);
+					}
+					
+					# Helper function; see url for info
+					.overlapInt <- function(start1, end1, start2, end2){
+						# Does the range (start1, end1) overlap with (start2, end2)?
+						# http://nedbatchelder.com/blog/201310/range_overlap_in_two_compares.html
+						return (end1 >= start2 & end2 >= start1)
+					}
+					
+					# Get only the positional information relevant for the slice
+					snpspos_x <- snpspos[snpspos[,1] %in% snps$rowNameSlices[[ss]],]
+					genepos_x <- genepos[genepos[,1] %in% gene$rowNameSlices[[gg]],]
+					
+					# If left anchor overlaps the SNP... (SNPs x Loop boolean matrix)
+					boo1 <- outer(snpspos_x$pos, loopspos[,2], FUN = ">=") & outer(snpspos_x$pos, loopspos[,3], FUN = "<=") &
+						outer(snpspos_x$chr, loopspos[,1], FUN = "==")
+					
+					# If right anchor overlaps the gene... (Gene x Loop boolean matrix)
+					boo2 <- sapply(1:dim(loopspos)[1], function(idx){
+						.overlapInt(genepos_x$left, genepos_x$right, loopspos[idx,5],loopspos[idx,6])
+					}) & outer(genepos_x$chr, loopspos[,4], FUN = "==")
+					
+					# If right anchor overlaps the SNP... (SNPs x Loop boolean matrix)
+					boo3 <- outer(snpspos_x$pos, loopspos[,5], FUN = ">=") & outer(snpspos_x$pos, loopspos[,6], FUN = "<=") &
+						outer(snpspos_x$chr, loopspos[,4], FUN = "==")
+					
+					# If left anchor overlaps the gene... (Gene x Loop boolean matrix)
+					boo4 <- sapply(1:dim(loopspos)[1], function(idx){
+						.overlapInt(genepos_x$left, genepos_x$right, loopspos[idx,2],loopspos[idx,3])
+					}) & outer(genepos_x$chr, loopspos[,1], FUN = "==")
+					
+					# Keep SNP/gene pair joined any loop
+					match1 <- which(sapply(1:dim(loopspos)[1], function(idx){outer(boo1[,idx], boo2[,idx], FUN = "&")}), arr.ind = TRUE)
+					match2 <- which(sapply(1:dim(loopspos)[1], function(idx){outer(boo3[,idx], boo4[,idx], FUN = "&")}), arr.ind = TRUE)
+					match12 <- rbind(match1,match2)
+					
+					if(sum(match12) != 0) {  #guards against no matches
+						
+						wk <- match12[,1]
+						select.pair <- cbind(as.integer(wk/dim(snpspos_x)[1]) + 1, wk %% dim(snpspos_x)[1])
+						
+						# Compute summary statistics
+						outstat <- statistic[wk]
+						p <- pvfun(statistic[wk])
+						
+						if(!is.null(betafun)){
+							beta = betafun(mat[[length(mat)]][wk], ss, gg, select.pair)
+							outstat <- cbind(beta, outstat)
+						}
+						
+						# Append data to output file
+						rdf <- data.frame(cbind(snpspos_x[select.pair[,2],1], genepos_x[select.pair[,1],1], outstat, p, match12[,2]))
+						write.table(rdf, file = loopsfileout, append = TRUE, sep = "\t", row.names = FALSE, col.names = FALSE, quote = FALSE)
+						
+					}
+				}
+###################				
+## END of LOOPS ###
+###################
+				
 				#gene_offset = gene_offset + nrcg;
 				if( !is.null(statistic) ) {
 					per = 100*(gg/gene$nSlices() + ss-1) / snps$nSlices();

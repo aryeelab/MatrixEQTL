@@ -27,9 +27,6 @@ gene_location_file_name = paste(base.dir, "/data/geneloc.txt", sep="");
 # Set to character() for no covariates
 covariates_file_name = paste(base.dir, "/data/Covariates.txt", sep="");
 
-# Loops file name 
-loops_location_file_name = paste(base.dir, "/data/loops.bedpe.txt", sep="");
-
 # Output file name
 output_file_name_cis = tempfile();
 output_file_name_tra = tempfile();
@@ -80,8 +77,14 @@ if(length(covariates_file_name)>0) {
 ## Run the analysis
 snpspos = read.table(snps_location_file_name, header = TRUE, stringsAsFactors = FALSE);
 genepos = read.table(gene_location_file_name, header = TRUE, stringsAsFactors = FALSE);
-genepos = read.table(loops_location_file_name, header = TRUE, stringsAsFactors = FALSE);
 
+
+###################
+# Extra parameters for loop analysis
+loops_location_file_name = paste(base.dir, "/data/loops.bedpe.txt", sep="");
+loopspos = read.table(loops_location_file_name, header = TRUE, stringsAsFactors = FALSE);
+loopsfileout <- "loopsEQTLs.txt"
+###################
 
 me = Matrix_eQTL_main(
 		snps = snps, 
@@ -96,7 +99,8 @@ me = Matrix_eQTL_main(
 		pvOutputThreshold.cis = pvOutputThreshold_cis,
 		snpspos = snpspos, 
 		genepos = genepos,
-		loopspos = loops,     #### Only major change
+		loopspos = loopspos,         #### Only major change
+		loopsfileout = loopsfileout, #### Only major change
 		cisDist = cisDist,
 		pvalue.hist = TRUE,
 		min.pv.by.genesnp = TRUE,
@@ -107,12 +111,5 @@ unlink(output_file_name_cis);
 
 ## Results:
 
-cat('Analysis done in: ', me$time.in.sec, ' seconds', '\n');
-cat('Detected local eQTLs:', '\n');
-show(me$cis$eqtls)
-cat('Detected distant eQTLs:', '\n');
-show(me$trans$eqtls)
+cat('Check ', loopsfileout, ' for all looping eQTLs', '\n');
 
-## Plot the histogram of local and distant p-values
-
-plot(me)

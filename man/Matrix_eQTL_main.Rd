@@ -41,6 +41,7 @@ Matrix_eQTL_main( snps,
                   snpspos = NULL, 
                   genepos = NULL,
                   loopspos = NULL,
+                  loopsfileout = NULL, 
                   cisDist = 1e6,
                   pvalue.hist = FALSE,
                   min.pv.by.genesnp = FALSE,
@@ -129,6 +130,10 @@ Matrix_eQTL_engine(snps,
 		chr_1  \tab start_1 \tab stop_1 \tab chr_2 \tab start_2 \tab stop_2 \tab strand \tab nloops \cr
 		\ldots  \tab \ldots   \tab \ldots \tab \ldots	\tab	\ldots  \tab \ldots   \tab \ldots \tab \ldots \cr
 		}
+	}
+	
+	\item{loopsfileout}{
+		\code{character} Specifies which file to write the loops-mediated results out to.
 	}
 	
 	\item{cisDist}{

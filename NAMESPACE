@@ -28,4 +28,4 @@ exportMethods(
 importFrom("graphics", "abline", "legend", "lines", "par", "plot", "points", "title")
 importFrom("methods", "new")
 importFrom("stats", "complete.cases", "pf", "pt", "qf", "qt")
-importFrom("utils", "flush.console", "tail", "tail.matrix")
+importFrom("utils", "flush.console", "tail", "tail.matrix", "write.table")
