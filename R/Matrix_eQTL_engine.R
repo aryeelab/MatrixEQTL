@@ -1803,17 +1803,17 @@ Matrix_eQTL_main = function(
 					
 					# If right anchor overlaps the gene... (Gene x Loop boolean matrix)
 					boo2 <- sapply(1:dim(loopspos)[1], function(idx){
-						.overlapInt(genepos_x$left, genepos_x$right, loopspos[idx,5],loopspos[idx,6])
-					}) & outer(genepos_x$chr, loopspos[,4], FUN = "==")
+						.overlapInt(genepos_x[,3], genepos_x[,4], loopspos[idx,5],loopspos[idx,6])
+					}) & outer(genepos_x[,2], loopspos[,4], FUN = "==")
 					
 					# If right anchor overlaps the SNP... (SNPs x Loop boolean matrix)
-					boo3 <- outer(snpspos_x$pos, loopspos[,5], FUN = ">=") & outer(snpspos_x$pos, loopspos[,6], FUN = "<=") &
-						outer(snpspos_x$chr, loopspos[,4], FUN = "==")
+					boo3 <- outer(snpspos_x[,3], loopspos[,5], FUN = ">=") & outer(snpspos_x[,3], loopspos[,6], FUN = "<=") &
+						outer(snpspos_x[,2], loopspos[,4], FUN = "==")
 					
 					# If left anchor overlaps the gene... (Gene x Loop boolean matrix)
 					boo4 <- sapply(1:dim(loopspos)[1], function(idx){
-						.overlapInt(genepos_x$left, genepos_x$right, loopspos[idx,2],loopspos[idx,3])
-					}) & outer(genepos_x$chr, loopspos[,1], FUN = "==")
+						.overlapInt(genepos_x[,3], genepos_x[,4], loopspos[idx,2],loopspos[idx,3])
+					}) & outer(genepos_x[,2], loopspos[,1], FUN = "==")
 					
 					# Keep SNP/gene pair joined any loop
 					match1 <- which(sapply(1:dim(loopspos)[1], function(idx){outer(boo1[,idx], boo2[,idx], FUN = "&")}), arr.ind = TRUE)
